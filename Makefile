@@ -25,6 +25,7 @@ kubes-minio:
 
 ## install prefect api and agent into kubes cluster
 kubes-prefect: export PREFECT_API_URL=http://localhost:4200/api
+
 kubes-prefect: $(venv)
 	$(venv)/bin/prefect kubernetes manifest orion | kubectl apply -f - --wait=true
 	kubectl apply -f infra/ingress-orion.yaml --wait=true
@@ -37,11 +38,15 @@ kubes-prefect: $(venv)
 param-flow: $(venv)
 	$(venv)/bin/python -m flows.param_flow
 
-## run ray flow
+## run dask flow
 dask-flow: $(venv)
 	$(venv)/bin/python -m flows.dask_flow
 
-## run dask flow
+## run dask-kubernetes flow
+dask-kubes-flow: $(venv)
+	$(venv)/bin/python -m flows.dask_kubes_flow
+
+## run ray flow
 ray-flow: $(venv)
 	$(venv)/bin/python -m flows.ray_flow
 
@@ -52,7 +57,7 @@ sub-flow: $(venv)
 ## deploy basic_flow to kubernetes
 kubes-deploy: export PREFECT_API_URL=http://localhost:4200/api
 kubes-deploy: $(venv)
-	docker compose build app && docker compose push app
+	docker-compose build app && docker-compose push app
 # use minio as the s3 remote file system
 	set -e && . config/fsspec-env.sh && $(venv)/bin/prefect deployment create flows/kubes_deployments.py
 	$(venv)/bin/prefect deployment ls
